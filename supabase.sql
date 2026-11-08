@@ -236,7 +236,7 @@ begin
     return jsonb_build_object('ok', false, 'error', 'senha_incorreta');
   end if;
 
-  delete from barbearia.login_attempts;
+  delete from barbearia.login_attempts where true;
   delete from barbearia.barber_sessions where expires_at < now();
   tk := replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '');
   insert into barbearia.barber_sessions (token, expires_at) values (tk, now() + interval '12 hours');
