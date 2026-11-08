@@ -233,9 +233,7 @@ var CFG={
   key:'sb_publishable_8C5nzFqa7KyAMeE3SG4TDA_QaLsTQMu'
 };
 
-/* Usado só para decidir quando mostrar o campo de senha.
-   Quem confere nome, número e senha de verdade é o banco. */
-var BARBER={name:'bryan peixe',phone:'16993397066',first:'Bryan'};
+var BARBER={h:'733576b64b5660e56145e8f480a3acaa5c7d82e3ebffba736ecbbb68c9daafce',first:'Bryan'};
 
 var WEEK=['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
 var DEFAULT_CFG={shopName:'Barbearia',open:'09:00',close:'19:00',step:15,closedDays:[0],services:[]};
@@ -246,7 +244,14 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){retur
 function norm(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();}
 function digits(s){return String(s||'').replace(/\D/g,'');}
 function phoneKey(s){var d=digits(s);if((d.length===12||d.length===13)&&d.indexOf('55')===0)d=d.slice(2);return d;}
-function isBarber(n,sn,ph){return norm(n+' '+sn)===BARBER.name&&phoneKey(ph)===BARBER.phone;}
+function isBarber(n,sn,ph){
+  var t=norm(n+' '+sn)+'|'+phoneKey(ph);
+  if(!(window.crypto&&crypto.subtle&&window.TextEncoder))return Promise.resolve(true);
+  return crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)).then(function(b){
+    var x=Array.prototype.map.call(new Uint8Array(b),function(v){return ('0'+v.toString(16)).slice(-2);}).join('');
+    return x===BARBER.h;
+  }).catch(function(){return true;});
+}
 function fmtPhone(s){
   var d=digits(s).slice(0,11);
   if(d.length<=2)return d;
@@ -686,14 +691,16 @@ function onIdentityOk(){
   if(sn.length<2)return setErr('Escreva seu sobrenome.');
   var d=phoneKey(ph);
   if(d.length<10||d.length>11)return setErr('Escreva o celular com DDD, por exemplo (16) 99999-9999.');
-  if(isBarber(n,sn,ph)){
-    S.bl={name:n,surname:sn,phone:d,serviceId:m.serviceId};
-    openModal({type:'password'});return;
-  }
-  S.identity={name:n,surname:sn,phone:d};saveIdentity();
-  S.sched={serviceId:m.serviceId,date:firstDate(),time:null};
-  openModal({type:'schedule'});
-  refreshTaken();
+  isBarber(n,sn,ph).then(function(yes){
+    if(yes){
+      S.bl={name:n,surname:sn,phone:d,serviceId:m.serviceId};
+      openModal({type:'password'});return;
+    }
+    S.identity={name:n,surname:sn,phone:d};saveIdentity();
+    S.sched={serviceId:m.serviceId,date:firstDate(),time:null};
+    openModal({type:'schedule'});
+    refreshTaken();
+  });
 }
 function onPassOk(){
   var pw=$('#f-pass')?$('#f-pass').value:'';
