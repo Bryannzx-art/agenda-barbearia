@@ -48,7 +48,8 @@ h1,h2,h3,p{margin:0}
 .tab-btn:hover{background:#e9ebee}
 .wrap{max-width:760px;margin:0 auto;padding-top:44px}
 .hello{display:flex;align-items:center;gap:16px}
-.avatar{flex:none;width:80px;height:80px;border-radius:50%;background:#1d2127;color:#f6e8b4;display:grid;place-items:center;font:700 26px/1 var(--font);letter-spacing:.04em}
+.avatar img,.mc .av img,.photo-prev img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
+.avatar{flex:none;overflow:hidden;width:80px;height:80px;border-radius:50%;background:#1d2127;color:#f6e8b4;display:grid;place-items:center;font:700 26px/1 var(--font);letter-spacing:.04em}
 .eyebrow{font:400 15px/1.3 var(--font);color:#2d333b}
 h1{font:500 30px/1.15 var(--font);text-wrap:balance;overflow-wrap:anywhere}
 .sect{font:500 20px/1.2 var(--font);margin:44px 0 12px}
@@ -136,6 +137,11 @@ input:focus,select:focus{border-color:var(--ok);outline:none;box-shadow:0 0 0 3p
 .legend i{display:inline-block;width:14px;height:14px;border-radius:4px;margin-right:6px;vertical-align:-2px;border:2px solid #e4e7ea;background:#fff}
 .legend i.r{background:var(--danger-soft);border-color:var(--danger)}
 .legend i.g{background:#eef0f2}
+.photo-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.photo-prev{width:88px;height:88px;border-radius:50%;overflow:hidden;background:#1d2127;color:#f6e8b4;display:grid;place-items:center;font:700 28px/1 var(--font);flex:none}
+.filebtn{display:inline-flex;align-items:center;cursor:pointer}
+.filebtn input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.filebtn:focus-within{outline:3px solid #1a73e8;outline-offset:2px}
 .help{background:var(--soft);border-radius:12px;padding:14px 16px;color:#2d333b;font-size:15px;line-height:1.5}
 .help b{font-weight:700}
 .blkbar{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 6px}
@@ -157,7 +163,7 @@ input:focus,select:focus{border-color:var(--ok);outline:none;box-shadow:0 0 0 3p
 .mcards{list-style:none;margin:0;padding:0;display:grid;gap:12px}
 .mc{position:relative;display:flex;gap:10px;align-items:center;min-height:92px;border:1px solid var(--line);border-left:5px solid #9a9a9a;border-radius:10px;padding:14px 14px 14px 12px;background:#fff}
 .mc.ag{border-left-color:#3ba0f5}
-.mc .av{flex:none;width:60px;height:60px;border-radius:50%;background:#1d2127;color:#f6e8b4;display:grid;place-items:center;font:700 20px/1 var(--font)}
+.mc .av{flex:none;overflow:hidden;width:60px;height:60px;border-radius:50%;background:#1d2127;color:#f6e8b4;display:grid;place-items:center;font:700 20px/1 var(--font)}
 .mc .tx{min-width:0;display:grid;gap:2px;font-size:15px}
 .mc .tx .pr{display:flex;gap:8px;align-items:center;font-weight:500}
 .mc .st{position:absolute;top:12px;right:14px;font:700 12px var(--font);letter-spacing:.02em;color:#fff;border-radius:99px;padding:4px 11px;background:#7a7a7a}
@@ -254,7 +260,7 @@ var CFG={
 var BARBER={h:'733576b64b5660e56145e8f480a3acaa5c7d82e3ebffba736ecbbb68c9daafce',first:'Bryan'};
 
 var WEEK=['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
-var DEFAULT_CFG={shopName:'Barbearia',open:'09:00',close:'19:00',step:15,closedDays:[0],services:[]};
+var DEFAULT_CFG={photo:'',shopName:'Barbearia',open:'09:00',close:'19:00',step:15,closedDays:[0],services:[]};
 
 /* ---------- utilitários ---------- */
 function $(s){return document.querySelector(s);}
@@ -297,6 +303,7 @@ function dayLong(k){
 function shortDay(k){var w=pd(k).toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','');return w.charAt(0).toUpperCase()+w.slice(1)+'., '+k.split('-').reverse().join('/');}
 function shortDay2(k){var w=pd(k).toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','');return w+', '+k.split('-').reverse().join('/');}
 function shortDate(k){return pd(k).toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'}).replace('.','');}
+function avatarInner(){var c=S.cfg;return c.photo?'<img src="'+c.photo+'" alt="">':esc(initials(c.shopName));}
 function initials(n){var p=String(n||'').trim().split(/\s+/).filter(Boolean);return ((p[0]||'B')[0]+((p[1]||'')[0]||'')).toUpperCase();}
 function mergeCfg(c){
   var d=clone(DEFAULT_CFG);
@@ -305,7 +312,9 @@ function mergeCfg(c){
   var svcs=(Array.isArray(c.services)?c.services:[]).map(function(s){
     return {id:String(s.id||slug(s.name)),name:String(s.name||'Serviço'),duration:Math.max(1,parseInt(s.duration,10)||15),price:Math.max(0,Number(s.price)||0)};
   });
+  var ph=(typeof c.photo==='string'&&c.photo.length<200000&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(c.photo))?c.photo:'';
   return {
+    photo:ph,
     shopName:String(c.shopName||'').trim()||d.shopName,
     open:okT(c.open)?c.open:d.open,
     close:okT(c.close)?c.close:d.close,
@@ -426,7 +435,7 @@ function viewMine(){
     if(ag)act=S.confirmId===b.id?
       '<div class="qrow"><span class="q">Cancelar?</span><button class="btn-danger sm" data-act="cancel-yes" data-id="'+esc(b.id)+'">Sim</button><button class="btn-ghost sm" data-act="cancel-no">Não</button></div>':
       '<button class="trash" aria-label="Cancelar agendamento" data-act="cancel-mine" data-id="'+esc(b.id)+'"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>';
-    return '<li class="mc'+(ag?' ag':'')+'"><div class="av" aria-hidden="true">'+esc(ini)+'</div><div class="tx"><span>'+esc(b.serviceName)+'</span><span>'+esc(shortDay(b.date))+' às '+esc(b.time)+'</span><span class="pr">'+I.cash(22)+'a partir de '+money.format(Number(b.price)||0)+'</span></div><span class="st">'+(ag?'AGENDADO':'FINALIZADO')+'</span>'+act+'</li>';
+    return '<li class="mc'+(ag?' ag':'')+'"><div class="av" aria-hidden="true">'+avatarInner()+'</div><div class="tx"><span>'+esc(b.serviceName)+'</span><span>'+esc(shortDay(b.date))+' às '+esc(b.time)+'</span><span class="pr">'+I.cash(22)+'a partir de '+money.format(Number(b.price)||0)+'</span></div><span class="st">'+(ag?'AGENDADO':'FINALIZADO')+'</span>'+act+'</li>';
   }).join('')+'</ul>';
   return '<main class="minepage"><div class="mhead"><h1>Meus agendamentos</h1><button class="pbtn go" data-act="home">Novo agendamento</button></div>'+body+'</main>';
 }
@@ -448,7 +457,7 @@ function viewClient(){
       '<button class="btn-res" data-act="book" data-id="'+esc(s.id)+'">'+I.cal(24)+'Reservar</button></li>';
   }).join('');
   return '<header class="top"><span class="wordmark">'+esc(c.shopName)+'</span><button class="tab-btn" data-act="mine">Meus agendamentos</button></header>'+
-    '<main class="wrap"><section class="hello"><div class="avatar" aria-hidden="true">'+esc(initials(c.shopName))+'</div>'+
+    '<main class="wrap"><section class="hello"><div class="avatar" aria-hidden="true">'+avatarInner()+'</div>'+
     '<div><p class="eyebrow">Seja bem-vindo(a) ao</p><h1>'+esc(c.shopName)+'</h1></div></section>'+
     '<h2 class="sect">Serviços</h2><ul class="services">'+(items||'<li><p class="empty">Nenhum serviço cadastrado.</p></li>')+'</ul>'+
     '<p class="hours">Atendimento das '+esc(c.open)+' às '+esc(c.close)+(closed.length?' · fechado: '+closed.join(', '):'')+'</p></main>';
@@ -528,7 +537,11 @@ function settingsHtml(){
       '<div><label for="sp'+i+'">Preço (R$)</label><input id="sp'+i+'" type="text" inputmode="decimal" data-f="svc" data-i="'+i+'" data-k="price" value="'+esc(String(s.price).replace('.',','))+'"></div>'+
       '<button type="button" class="btn-ghost sm" data-act="del-svc" data-i="'+i+'">Excluir</button></div>';
   }).join('');
+  var prev=d.photo?'<img src="'+d.photo+'" alt="">':esc(initials(d.shopName));
   return '<div class="cfg" style="margin-top:22px">'+
+    '<div class="card"><h3>Foto da barbearia</h3><div class="photo-row"><div class="photo-prev">'+prev+'</div><div class="stack">'+
+      '<p style="font-size:14px;color:var(--muted)">Aparece na página inicial e nos agendamentos do cliente. Escolha uma foto do celular ou do computador. Ela é ajustada e salva na hora.</p>'+
+      '<div class="acts" style="justify-content:flex-start"><label class="btn-ok sm filebtn"><input type="file" id="photo-in" accept="image/*">Trocar foto</label>'+(d.photo?'<button type="button" class="btn-ghost sm" data-act="photo-del">Remover foto</button>':'')+'</div></div></div></div>'+
     '<div class="card"><h3>Barbearia</h3><div class="grid2">'+
       '<div><label for="c-name">Nome</label><input id="c-name" type="text" data-f="shopName" value="'+esc(d.shopName)+'"></div>'+
       '<div><label for="c-open">Abre</label><input id="c-open" type="time" data-f="open" value="'+esc(d.open)+'"></div>'+
@@ -818,7 +831,7 @@ function saveConfig(){
   if(!svcs.length)return toast('Cadastre pelo menos um serviço.');
   if(svcs.some(function(s){return !s.name||s.duration<1;}))return toast('Todo serviço precisa de nome e de minutos.');
   if(toMin(d.open)>=toMin(d.close))return toast('O horário de abertura precisa ser antes do fechamento.');
-  var clean={shopName:String(d.shopName).trim(),open:d.open,close:d.close,step:Number(d.step)||15,closedDays:d.closedDays.slice(),services:svcs};
+  var clean={photo:d.photo||'',shopName:String(d.shopName).trim(),open:d.open,close:d.close,step:Number(d.step)||15,closedDays:d.closedDays.slice(),services:svcs};
   barberCall('barber_save_config',{p_config:clean}).then(function(){S.cfg=mergeCfg(clean);document.title=S.cfg.shopName;S.draft=null;toast('Alterações salvas.');render();}).catch(function(e){toast(msg(e));});
 }
 function changePw(){
@@ -888,6 +901,7 @@ document.addEventListener('click',function(e){
       if(bd.all){toast('O dia inteiro está bloqueado. Toque em "Liberar o dia inteiro" primeiro.');break;}
       setBlock(S.blkDay,tm,!bd.slots[tm]);break;}
     case 'blk-all':setBlock(S.blkDay,null,t.dataset.v==='1');break;
+    case 'photo-del':if(S.draft){S.draft.photo='';saveConfig();}break;
     case 'save-cfg':saveConfig();break;
     case 'change-pw':changePw();break;
   }
@@ -905,6 +919,22 @@ document.addEventListener('input',function(e){
     else if(k==='price')s.price=parseFloat(String(el.value).replace(',','.'))||0;
   }else if(f==='step')S.draft.step=parseInt(el.value,10)||15;
   else S.draft[f]=el.value;
+});
+document.addEventListener('change',function(e){
+  var el=e.target;if(!el||el.id!=='photo-in'||!el.files||!el.files[0]||!S.draft)return;
+  var f=el.files[0];
+  if(!/^image\//.test(f.type))return toast('Escolha um arquivo de imagem.');
+  var url=URL.createObjectURL(f),img=new Image();
+  img.onload=function(){
+    var n=360,cv=document.createElement('canvas');cv.width=n;cv.height=n;
+    var cx=cv.getContext('2d'),m=Math.min(img.width,img.height),sx=(img.width-m)/2,sy=(img.height-m)/2;
+    cx.fillStyle='#fff';cx.fillRect(0,0,n,n);cx.drawImage(img,sx,sy,m,m,0,0,n,n);
+    URL.revokeObjectURL(url);
+    S.draft.photo=cv.toDataURL('image/jpeg',0.82);
+    saveConfig();
+  };
+  img.onerror=function(){URL.revokeObjectURL(url);toast('Não consegui abrir essa imagem. Tente outra.');};
+  img.src=url;
 });
 document.addEventListener('keydown',function(e){
   if(e.key==='Escape'&&S.modal){S.bl=null;closeModal();return;}
