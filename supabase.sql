@@ -325,3 +325,9 @@ grant execute on function
   public.bb_barber_delete(text, uuid), public.bb_barber_save_config(text, jsonb),
   public.bb_barber_change_password(text, text, text)
 to anon, authenticated;
+
+-- ===== Bloqueios de horários (folgas, feriados, compromissos) =====
+-- (já aplicado no projeto; slot nulo = dia inteiro bloqueado)
+-- create table if not exists barbearia.blocks (day date not null, slot text, created_at timestamptz not null default now());
+-- Funções: public.bb_get_blocks(p_from date, p_to date), public.bb_barber_set_block(p_token text, p_day date, p_slot text, p_blocked boolean)
+-- bb_create_booking recusa 'horario_bloqueado' e aceita datas até 31/12 do ano corrente.
