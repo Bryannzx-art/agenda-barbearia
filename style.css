@@ -21,7 +21,35 @@
   color-scheme:light;
 }
 *{box-sizing:border-box}
-html,body{background:var(--bg)}
+html{background:var(--bg)}
+body{background:radial-gradient(60% 40% at 12% 8%,#e6f1ff 0,rgba(230,241,255,0) 70%),radial-gradient(50% 40% at 92% 28%,#fdecef 0,rgba(253,236,239,0) 70%),radial-gradient(60% 40% at 25% 96%,#e7f7ec 0,rgba(231,247,236,0) 70%),var(--bg);background-attachment:fixed}
+body.has-nav{padding-block-end:calc(132px + env(safe-area-inset-bottom,0px))}
+/* barra de vidro */
+#nav{position:fixed;left:0;right:0;bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;padding:0 16px;z-index:40;pointer-events:none}
+#nav:empty{display:none}
+.glass-bar{pointer-events:auto;position:relative;display:flex;gap:4px;padding:7px;width:min(430px,100%);border-radius:999px;
+  background:linear-gradient(135deg,rgba(255,255,255,.5) 0%,rgba(196,214,236,.16) 50%,rgba(255,255,255,.38) 100%);
+  -webkit-backdrop-filter:blur(22px) saturate(190%) brightness(1.04);backdrop-filter:blur(22px) saturate(190%) brightness(1.04);
+  border:1px solid rgba(255,255,255,.7);
+  box-shadow:0 14px 36px rgba(22,34,56,.2),0 2px 6px rgba(22,34,56,.08),inset 0 1.5px 1px rgba(255,255,255,.95),inset 0 -1.5px 1px rgba(255,255,255,.35),inset 0 0 24px rgba(255,255,255,.3)}
+.glass-bar::before{content:"";position:absolute;inset:1px 14px auto 14px;height:42%;border-radius:999px 999px 60% 60%;background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,0));pointer-events:none}
+.gbtn{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 6px 9px;border:1px solid transparent;background:transparent;border-radius:999px;color:#2a3342;font:500 12px/1.1 var(--font);transition:background .25s,box-shadow .25s,transform .15s,border-color .25s}
+.gbtn svg{display:block}
+.gbtn:active{transform:scale(.96)}
+.gbtn:hover{background:rgba(255,255,255,.28)}
+.gbtn[aria-current=page]{color:#0b1a2e;font-weight:700;background:linear-gradient(180deg,rgba(255,255,255,.85) 0%,rgba(255,255,255,.32) 100%);border-color:rgba(255,255,255,.9);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  box-shadow:0 6px 16px rgba(22,34,56,.16),inset 0 1.5px 1px #fff,inset 0 -1px 2px rgba(255,255,255,.5),inset 0 0 14px rgba(255,255,255,.55)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.glass-bar{background:rgba(250,251,253,.94)}}
+@media (prefers-reduced-transparency:reduce){.glass-bar{background:rgba(250,251,253,.97);-webkit-backdrop-filter:none;backdrop-filter:none}}
+/* cartao de vidro (endereco e barbeiro) */
+.gcard{position:relative;padding:22px;border-radius:24px;background:linear-gradient(135deg,rgba(255,255,255,.72),rgba(255,255,255,.34));-webkit-backdrop-filter:blur(18px) saturate(170%);backdrop-filter:blur(18px) saturate(170%);border:1px solid rgba(255,255,255,.8);box-shadow:0 12px 32px rgba(22,34,56,.12),inset 0 1.5px 1px rgba(255,255,255,.95),inset 0 0 22px rgba(255,255,255,.35)}
+.gcard .pin{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--ok-soft);color:var(--ok);margin-bottom:14px}
+.gcard .addr{font:500 19px/1.4 var(--font);overflow-wrap:anywhere}
+.gcard .about{font:400 16px/1.65 var(--font);white-space:pre-line;overflow-wrap:anywhere}
+.map{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-top:18px}
+textarea{width:100%;min-height:130px;border:2px solid #e4e7ea;border-radius:10px;padding:12px 14px;font:400 16px/1.5 var(--font);background:#fff;color:var(--ink);resize:vertical}
+textarea:focus{border-color:var(--ok);outline:none;box-shadow:0 0 0 3px var(--ok-soft)}
 body{
   margin:0;color:var(--ink);font:400 16px/1.5 var(--font);
   padding-left:max(16px,env(safe-area-inset-left,0px));
@@ -226,3 +254,5 @@ input:focus,select:focus{border-color:var(--ok);outline:none;box-shadow:0 0 0 3p
   .wrap{padding-top:30px}
 }
 @media (prefers-reduced-motion:reduce){#toast{transition:none}}
+
+body.has-nav #toast{bottom:calc(116px + env(safe-area-inset-bottom,0px))}

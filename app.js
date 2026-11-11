@@ -14,7 +14,7 @@ var CFG={
 var BARBER={h:'733576b64b5660e56145e8f480a3acaa5c7d82e3ebffba736ecbbb68c9daafce',first:'Bryan'};
 
 var WEEK=['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
-var DEFAULT_CFG={photo:'',shopName:'Barbearia',open:'09:00',close:'19:00',step:15,closedDays:[0],services:[]};
+var DEFAULT_CFG={photo:'',address:'',about:'',shopName:'Barbearia',open:'09:00',close:'19:00',step:15,closedDays:[0],services:[]};
 
 /* ---------- utilitários ---------- */
 function $(s){return document.querySelector(s);}
@@ -69,6 +69,8 @@ function mergeCfg(c){
   var ph=(typeof c.photo==='string'&&c.photo.length<200000&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(c.photo))?c.photo:'';
   return {
     photo:ph,
+    address:String(c.address||'').trim().slice(0,200),
+    about:String(c.about||'').trim().slice(0,1000),
     shopName:String(c.shopName||'').trim()||d.shopName,
     open:okT(c.open)?c.open:d.open,
     close:okT(c.close)?c.close:d.close,
@@ -85,6 +87,9 @@ var I={
   clock:function(s){return ico('<circle cx="12" cy="12" r="9"/><path d="M12 7v5h4"/>',s);},
   cash:function(s){return ico('<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6.5 9.5v.01M17.5 14.5v.01"/>',s);},
   cal:function(s){return ico('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4"/>',s);},
+  home:function(s){return ico('<path d="M3 11.5L12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-5.5h4V20"/>',s);},
+  pin:function(s){return ico('<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.6"/>',s);},
+  user:function(s){return ico('<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.2 8-6.2s8 2.2 8 6.2"/>',s);},
   check:function(s){return ico('<path d="M5 12.5l4.5 4.5L19 7.5"/>',s);}
 };
 
@@ -196,8 +201,29 @@ function viewMine(){
   }).join('')+'</ul>';
   return '<main class="minepage"><div class="mhead"><h1>Meus agendamentos</h1><button class="pbtn go" data-act="home">Novo agendamento</button></div>'+body+'</main>';
 }
+function navHtml(){
+  var cur=S.page==='address'?'address':(S.page==='about'?'about':'home');
+  var items=[['home','Início',I.home],['address','Endereço',I.pin],['about','Barbeiro',I.user]];
+  return '<div class="glass-bar">'+items.map(function(i){
+    return '<button type="button" class="gbtn" data-act="nav" data-p="'+i[0]+'"'+(cur===i[0]?' aria-current="page"':'')+'>'+i[2](26)+'<span>'+i[1]+'</span></button>';
+  }).join('')+'</div>';
+}
+function viewAddress(){
+  var c=S.cfg,has=!!c.address,closed=c.closedDays.map(function(d){return WEEK[d];});
+  return '<main class="wrap"><h1>Endereço</h1><div class="gcard" style="margin-top:22px"><div class="pin">'+I.pin(30)+'</div>'+
+    '<p class="addr">'+(has?esc(c.address):'O endereço ainda não foi cadastrado.')+'</p>'+
+    (has?'<a class="btn-ok map" target="_blank" rel="noopener noreferrer" href="'+esc('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(c.address))+'">Abrir no mapa</a>':'')+
+    '<p class="hours" style="margin-top:18px">Atendimento das '+esc(c.open)+' às '+esc(c.close)+(closed.length?' · fechado: '+closed.join(', '):'')+'</p></div></main>';
+}
+function viewAbout(){
+  var c=S.cfg;
+  return '<main class="wrap"><section class="hello"><div class="avatar" aria-hidden="true">'+avatarInner()+'</div><div><p class="eyebrow">Conheça o barbeiro</p><h1>'+esc(BARBER.first)+'</h1></div></section>'+
+    '<div class="gcard" style="margin-top:24px"><p class="about">'+(c.about?esc(c.about):'Em breve você vai conhecer mais sobre o barbeiro.')+'</p></div></main>';
+}
 function viewClient(){
   var c=S.cfg;
+  if(S.page==='address'&&S.cfgLoaded)return viewAddress();
+  if(S.page==='about'&&S.cfgLoaded)return viewAbout();
   if(S.page==='done'&&S.cfgLoaded)return viewDone();
   if(S.page==='mine'&&S.cfgLoaded)return viewMine();
   if(!CONFIGURED){
@@ -299,6 +325,10 @@ function settingsHtml(){
     '<div class="card"><h3>Foto da barbearia</h3><div class="photo-row"><div class="photo-prev">'+prev+'</div><div class="stack">'+
       '<p style="font-size:14px;color:var(--muted)">Aparece na página inicial e nos agendamentos do cliente. Escolha uma foto do celular ou do computador. Ela é ajustada e salva na hora.</p>'+
       '<div class="acts" style="justify-content:flex-start"><label class="btn-ok sm filebtn"><input type="file" id="photo-in" accept="image/*">Trocar foto</label>'+(d.photo?'<button type="button" class="btn-ghost sm" data-act="photo-del">Remover foto</button>':'')+'</div></div></div></div>'+
+    '<div class="card"><h3>Endereço e sobre o barbeiro</h3><div class="stack">'+
+      '<div><label for="c-addr">Endereço da barbearia</label><input id="c-addr" type="text" maxlength="200" placeholder="Rua, número, bairro, cidade" data-f="address" value="'+esc(d.address||'')+'"></div>'+
+      '<div><label for="c-about">Descrição do barbeiro</label><textarea id="c-about" maxlength="1000" placeholder="Conte quem você é, sua experiência, o estilo de corte..." data-f="about">'+esc(d.about||'')+'</textarea></div>'+
+      '<p style="font-size:14px;color:var(--muted)">Aparecem nos botões Endereço e Barbeiro, na barra de baixo do site. Depois de editar, toque em Salvar alterações.</p></div></div>'+
     '<div class="card"><h3>Barbearia</h3><div class="grid2">'+
       '<div><label for="c-name">Nome</label><input id="c-name" type="text" data-f="shopName" value="'+esc(d.shopName)+'"></div>'+
       '<div><label for="c-open">Abre</label><input id="c-open" type="time" data-f="open" value="'+esc(d.open)+'"></div>'+
@@ -392,10 +422,13 @@ function viewBarber(){
 function render(){
   S.dirty=false;
   $('#app').innerHTML=S.view==='barber'?viewBarber():viewClient();
+  var show=S.view!=='barber'&&CONFIGURED&&S.cfgLoaded;
+  $('#nav').innerHTML=show?navHtml():'';
+  document.body.classList.toggle('has-nav',show);
 }
 function safeRender(){
   var a=document.activeElement;
-  if(a&&a.matches&&a.matches('#app input, #app select')){S.dirty=true;return;}
+  if(a&&a.matches&&a.matches('#app input, #app select, #app textarea')){S.dirty=true;return;}
   render();
 }
 
@@ -589,7 +622,7 @@ function saveConfig(){
   if(!svcs.length)return toast('Cadastre pelo menos um serviço.');
   if(svcs.some(function(s){return !s.name||s.duration<1;}))return toast('Todo serviço precisa de nome e de minutos.');
   if(toMin(d.open)>=toMin(d.close))return toast('O horário de abertura precisa ser antes do fechamento.');
-  var clean={photo:d.photo||'',shopName:String(d.shopName).trim(),open:d.open,close:d.close,step:Number(d.step)||15,closedDays:d.closedDays.slice(),services:svcs};
+  var clean={photo:d.photo||'',address:String(d.address||'').trim().slice(0,200),about:String(d.about||'').trim().slice(0,1000),shopName:String(d.shopName).trim(),open:d.open,close:d.close,step:Number(d.step)||15,closedDays:d.closedDays.slice(),services:svcs};
   barberCall('barber_save_config',{p_config:clean}).then(function(){S.cfg=mergeCfg(clean);document.title=S.cfg.shopName;S.draft=null;toast('Alterações salvas.');render();}).catch(function(e){toast(msg(e));});
 }
 function changePw(){
@@ -607,6 +640,7 @@ document.addEventListener('click',function(e){
     case 'retry':S.loadErr=false;render();loadConfig();break;
     case 'book':openModal({type:'identity',serviceId:id});break;
     case 'mine':openModal({type:'phone'});break;
+    case 'nav':S.page=t.dataset.p==='home'?null:t.dataset.p;S.confirmId=null;window.scrollTo(0,0);render();break;
     case 'home':S.page=null;S.confirmId=null;window.scrollTo(0,0);render();break;
     case 'mine-page':
       var ph=phoneKey((S.identity&&S.identity.phone)||'');
@@ -701,7 +735,7 @@ document.addEventListener('keydown',function(e){
     var ok=$('#modal .btn-ok');if(ok&&!ok.disabled){e.preventDefault();ok.click();}
   }
 });
-document.addEventListener('focusout',function(){setTimeout(function(){if(S.dirty&&!(document.activeElement&&document.activeElement.matches&&document.activeElement.matches('#app input, #app select')))render();},0);});
+document.addEventListener('focusout',function(){setTimeout(function(){if(S.dirty&&!(document.activeElement&&document.activeElement.matches&&document.activeElement.matches('#app input, #app select, #app textarea')))render();},0);});
 
 /* ---------- inicialização ---------- */
 render();
