@@ -50,7 +50,7 @@ create table if not exists barbearia.login_attempts (
 );
 
 -- ---------- dados iniciais (só na primeira vez) ----------
--- Senha inicial do painel: 11223344  (troque depois em Ajustes > Senha do painel)
+-- Senha inicial do painel: defina antes de rodar (troque a linha da senha abaixo) e mude depois em Ajustes > Senha do painel
 insert into barbearia.settings (id, config, barber_name, barber_phone, password_hash)
 values (
   1,
@@ -70,7 +70,7 @@ values (
   }'::jsonb,
   'bryan peixe',
   '16993397066',
-  extensions.crypt('11223344', extensions.gen_salt('bf'))
+  extensions.crypt('TROQUE-ESTA-SENHA', extensions.gen_salt('bf'))
 )
 on conflict (id) do nothing;
 
@@ -331,3 +331,10 @@ to anon, authenticated;
 -- create table if not exists barbearia.blocks (day date not null, slot text, created_at timestamptz not null default now());
 -- Funções: public.bb_get_blocks(p_from date, p_to date), public.bb_barber_set_block(p_token text, p_day date, p_slot text, p_blocked boolean)
 -- bb_create_booking recusa 'horario_bloqueado' e aceita datas até 31/12 do ano corrente.
+
+
+-- ===== Seguranca (ja aplicado no projeto) =====
+-- barbearia.rl_hits + barbearia.rl(): limite de requisicoes por IP (agendar 8/h, consultar 40/10min, cancelar 30/10min)
+-- bb_barber_login: 5 erros/15min por IP (30 no total), tempo igual para nome/numero errados, sessao de 8h, token guardado como hash SHA-256
+-- bb_barber_change_password: 8 a 72 caracteres, com letras e numeros, sem senhas fracas, derruba as outras sessoes
+-- bb_create_booking: no maximo 3 horarios futuros por celular
