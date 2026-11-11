@@ -469,12 +469,13 @@ function slotsHtml(){
   var isToday=date===dk(now),nowMin=now.getHours()*60+now.getMinutes();
   var open=toMin(c.open),close=toMin(c.close),step=Number(c.step)||15;
   var groups={'Manhã':[],'Tarde':[],'Noite':[]},free=0;
-  if(S.sched.time&&S.taken.has(slotKey(date,S.sched.time)))S.sched.time=null;
+  if(S.sched.time&&(S.taken.has(slotKey(date,S.sched.time))||isBlocked(date,S.sched.time)))S.sched.time=null;
   for(var t=open;t+step<=close;t+=step){
     var time=fromMin(t),off=S.taken.has(slotKey(date,time))||isBlocked(date,time)||(isToday&&t<=nowMin);
-    if(!off)free++;
+    if(off)continue;
+    free++;
     var g=t<720?'Manhã':(t<1080?'Tarde':'Noite');
-    groups[g].push('<button type="button" class="slot" data-act="pick" data-t="'+time+'" aria-pressed="'+(S.sched.time===time)+'"'+(off?' disabled':'')+'>'+time+'</button>');
+    groups[g].push('<button type="button" class="slot" data-act="pick" data-t="'+time+'" aria-pressed="'+(S.sched.time===time)+'">'+time+'</button>');
   }
   if(!free)return '<p class="empty">Sem horários livres neste dia. Escolha outro dia.</p>';
   return Object.keys(groups).filter(function(k){return groups[k].length;}).map(function(k){
